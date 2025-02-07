@@ -2,7 +2,7 @@
 const localstream = document.getElementById('localstream')
 const remotestream = document.getElementById('remotestream')
 
-const socket = io('http://localhost:3000');
+const socket = io('');
 
 const peerConnection = new RTCPeerConnection({
     iceServers: [
@@ -38,6 +38,7 @@ navigator.mediaDevices.getUserMedia({video:true , audio:true}).then((stream)=>{
       peerConnection.addTrack(track , stream)
   })
   localstream.srcObject = stream
+  
 })
 
 

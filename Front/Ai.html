@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Call</title>
+    <link href="./styles.css" rel="stylesheet"/>
+</head>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: #f8f9fa;
+    overflow: hidden;
+    position: relative;
+}
+.app-container {
+    width: 100%;
+    max-width: 414px;
+    height: 736px;
+    background: #ffffff;
+    border-radius: 25px;
+    box-shadow: 0 30px 70px rgba(0, 0, 0, 0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+    padding: 20px;
+}
+.main-video {
+    width: 90%;
+    height: 65%;
+    background: #000000;
+    border-radius: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    margin-bottom: 8px;
+}
+.small-video {
+    width: 60%;
+    height: 20%;
+    margin-bottom: 15%;
+    background: #000000;
+    border-radius: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.video-box video {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+}
+.video-box video:playing + .loader {
+    display: none;
+}
+.loader {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.loader div {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background-color: rgba(255, 255, 255, 0.6);
+    border-radius: 50%;
+    animation: rotate 1.2s linear infinite, colorChange 1.2s linear infinite;
+}
+.loader div:nth-child(1) { transform: rotate(0deg) translate(20px); animation-delay: 0s; }
+.loader div:nth-child(2) { transform: rotate(60deg) translate(20px); animation-delay: 0.2s; }
+.loader div:nth-child(3) { transform: rotate(120deg) translate(20px); animation-delay: 0.4s; }
+.loader div:nth-child(4) { transform: rotate(180deg) translate(20px); animation-delay: 0.6s; }
+.loader div:nth-child(5) { transform: rotate(240deg) translate(20px); animation-delay: 0.8s; }
+.loader div:nth-child(6) { transform: rotate(300deg) translate(20px); animation-delay: 1s; }
+
+@keyframes rotate {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+@keyframes colorChange {
+    0% { background-color: rgba(255, 255, 255, 0.6); }
+    100% { background-color: rgba(0, 123, 255, 1); }
+}
+
+.controls {
+    position: absolute;
+    bottom: 20px;
+    display: flex;
+    gap: 20px;
+}
+.control-button {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: white;
+    color: black;
+    border: 2px solid black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 11px;
+    font-weight:normal;
+    cursor: pointer;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+.end-call {
+    color: darkred;
+    border-color: darkred;
+}
+#localstream{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+#remotestream{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+</style>
+<body>
+    <div class="app-container">
+        <div class="main-video video-box">
+            <video id="remotestream" autoplay playsinline></video>
+            <div class="loader">
+                <div></div><div></div><div></div><div></div><div></div><div></div>
+            </div>
+        </div>
+        <div class="small-video video-box">
+            <video id="localstream" autoplay playsinline></video>
+            <div class="loader">
+                <div></div><div></div><div></div><div></div><div></div><div></div>
+            </div>
+        </div>
+        <div class="controls">
+            <button id="mutebtn" class="control-button mute">Mute</button>
+            <button id="endbtn" class="control-button end-call">End Call</button>
+            <button id="hidebtn" class="control-button hide">Hide</button>
+        </div>
+    </div>
+</body>
+<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+<script src="./script.js">
+
+const localstream = document.getElementById('localstream')
+const remotestream = document.getElementById('remotestream')
+
+const socket = io('http://localhost:3000');
+
+const peerConnection = new RTCPeerConnection({
+    iceServers: [
+        {
+          urls: "stun:stun.relay.metered.ca:80",
+        },
+        {
+          urls: "turn:global.relay.metered.ca:80",
+          username: "38ee091c80ce59e7934dc880",
+          credential: "DCdxPjEpZcziiiKk",
+        },
+        {
+          urls: "turn:global.relay.metered.ca:80?transport=tcp",
+          username: "38ee091c80ce59e7934dc880",
+          credential: "DCdxPjEpZcziiiKk",
+        },
+        {
+          urls: "turn:global.relay.metered.ca:443",
+          username: "38ee091c80ce59e7934dc880",
+          credential: "DCdxPjEpZcziiiKk",
+        },
+        {
+          urls: "turns:global.relay.metered.ca:443?transport=tcp",
+          username: "38ee091c80ce59e7934dc880",
+          credential: "DCdxPjEpZcziiiKk",
+        },
+    ],
+  });
+           
+
+navigator.mediaDevices.getUserMedia({video:true , audio:true}).then((stream)=>{
+  stream.getTracks().forEach(track=>{
+      peerConnection.addTrack(track , stream)
+  })
+  localstream.srcObject = stream
+})
+
+
+
+remotestream.onplaying = function() {
+    const loader = remotestream.nextElementSibling;
+    if (loader && loader.classList.contains('loader')) {
+        loader.style.display = 'none';
+    }
+};
+
+localstream.onplaying = function() {
+    const loader = localstream.nextElementSibling;
+    if (loader && loader.classList.contains('loader')) {
+        loader.style.display = 'none';
+    }
+};
+
+
+socket.on('offer', async (offer) => {
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await peerConnection.createAnswer();
+    await peerConnection.setLocalDescription(answer);
+    socket.emit('answer', answer);
+});
+
+socket.on('answer', async (answer) => {
+    await peerConnection.setRemoteDescription(new RTCSessionDescription(answer));
+    console.log("Connected successfully")
+});
+
+peerConnection.ontrack = (event)=>{
+    remotestream.srcObject = event.streams[0]
+
+}
+peerConnection.onicecandidate = (event)=>{
+console.log(event)
+};
+
+socket.on('ice', async (ice) => {
+    await peerConnection.addIceCandidate(new RTCIceCandidate(ice));
+    console.log(ice)
+});
+
+async function sendOffer() {
+    const offer = await peerConnection.createOffer();
+    await peerConnection.setLocalDescription(offer);
+    socket.emit('offer', offer);
+}
+
+peerConnection.onnegotiationneeded = sendOffer
+</script>
+</html>

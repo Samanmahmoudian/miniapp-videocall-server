@@ -6,33 +6,39 @@ const endbtn = document.getElementById('endbtn');
 
 const socket = io('http://localhost:3000');
 
-const peerConnection = new RTCPeerConnection({
+var peerConnection = new RTCPeerConnection({
     iceServers: [
         {
-            urls: "stun:stun.relay.metered.ca:80",
+          urls: "stun:stun.relay.metered.ca:80",
         },
         {
-            urls: "turn:global.relay.metered.ca:80",
-            username: "38ee091c80ce59e7934dc880",
-            credential: "DCdxPjEpZcziiiKk",
+            urls: "stun:stun.l.google.com:19302",
+          },
+          {
+            urls: "stun:global.stun.twilio.com:3478",
+          },
+        {
+          urls: "turn:global.relay.metered.ca:80",
+          username: "668aa7edae8119ac57b8985d",
+          credential: "MRvEutvpeLKLHuQA",
         },
         {
-            urls: "turn:global.relay.metered.ca:80?transport=tcp",
-            username: "38ee091c80ce59e7934dc880",
-            credential: "DCdxPjEpZcziiiKk",
+          urls: "turn:global.relay.metered.ca:80?transport=tcp",
+          username: "668aa7edae8119ac57b8985d",
+          credential: "MRvEutvpeLKLHuQA",
         },
         {
-            urls: "turn:global.relay.metered.ca:443",
-            username: "38ee091c80ce59e7934dc880",
-            credential: "DCdxPjEpZcziiiKk",
+          urls: "turn:global.relay.metered.ca:443",
+          username: "668aa7edae8119ac57b8985d",
+          credential: "MRvEutvpeLKLHuQA",
         },
         {
-            urls: "turns:global.relay.metered.ca:443?transport=tcp",
-            username: "38ee091c80ce59e7934dc880",
-            credential: "DCdxPjEpZcziiiKk",
+          urls: "turns:global.relay.metered.ca:443?transport=tcp",
+          username: "668aa7edae8119ac57b8985d",
+          credential: "MRvEutvpeLKLHuQA",
         },
     ],
-});
+  });
 
 navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
     stream.getTracks().forEach((track) => {

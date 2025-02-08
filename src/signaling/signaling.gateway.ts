@@ -26,8 +26,14 @@ async handleAnswer(@MessageBody() answer , @ConnectedSocket() client:Socket){
 async handleIce(@MessageBody() ice , @ConnectedSocket() client:Socket){
   client.broadcast.emit('ice' , ice)
 }
+
 @SubscribeMessage('endcall')
 async handleEndcall(@MessageBody() endcall , @ConnectedSocket() client:Socket){
   client.broadcast.emit('endcall' , endcall)
+}
+
+@SubscribeMessage('error')
+async handleError(@MessageBody() error , @ConnectedSocket() client:Socket){
+  client.broadcast.emit('error' , error)
 }
 }

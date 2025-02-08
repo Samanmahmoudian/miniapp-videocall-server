@@ -9,6 +9,28 @@ const socket = io('http://localhost:3000');
 var peerConnection = new RTCPeerConnection({
     iceServers: [
         {
+            url: 'stun:global.stun.twilio.com:3478',
+            urls: 'stun:global.stun.twilio.com:3478'
+          },
+          {
+            url: 'turn:global.turn.twilio.com:3478?transport=udp',
+            username: '831a2f384d43a34121a9c61d4a88371144523a35887d01dc1d5adacc34ef1e7a',
+            urls: 'turn:global.turn.twilio.com:3478?transport=udp',
+            credential: 'y1pgmln8x7nYMcOZZNsU6TYdY1uQwG8aIc6PgiCq8BE='
+          },
+          {
+            url: 'turn:global.turn.twilio.com:3478?transport=tcp',
+            username: '831a2f384d43a34121a9c61d4a88371144523a35887d01dc1d5adacc34ef1e7a',
+            urls: 'turn:global.turn.twilio.com:3478?transport=tcp',
+            credential: 'y1pgmln8x7nYMcOZZNsU6TYdY1uQwG8aIc6PgiCq8BE='
+          },
+          {
+            url: 'turn:global.turn.twilio.com:443?transport=tcp',
+            username: '831a2f384d43a34121a9c61d4a88371144523a35887d01dc1d5adacc34ef1e7a',
+            urls: 'turn:global.turn.twilio.com:443?transport=tcp',
+            credential: 'y1pgmln8x7nYMcOZZNsU6TYdY1uQwG8aIc6PgiCq8BE='
+          },
+        {
           urls: "stun:stun.relay.metered.ca:80",
         },
         {

@@ -1,8 +1,5 @@
-import { Injectable } from '@nestjs/common';
-
+import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+const twilio = require("twilio")
 @Injectable()
-export class AppService {
-  getHello(): string {
-    return 'Hello World!';
-  }
-}
+export class AppService {}
+

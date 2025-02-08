@@ -118,10 +118,17 @@ peerConnection.onnegotiationneeded = sendOffer;
 
 endbtn.addEventListener('click', () => {
     peerConnection.close();  
-    localstream.srcObject.getTracks().forEach(track => track.stop());  
+    localstream.srcObject.getTracks().forEach(track => track.stop()); 
+    socket.emit('endcall' , 'end') 
     alert('Call ended.');
     window.close()
 });
+socket.on('endcall' , async(endcall)=>{
+  if(endcall == 'end'){
+    alert('The other user ended the call...');
+    window.close()
+  }
+})
 
 
 let isMuted = false;

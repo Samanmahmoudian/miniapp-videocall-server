@@ -33,7 +33,7 @@ async handleEndcall(@MessageBody() endcall , @ConnectedSocket() client:Socket){
 }
 
 @SubscribeMessage('error')
-async handleError(@MessageBody() error , @ConnectedSocket() client:Socket){
-  client.broadcast.emit('error' , error)
+async handleError(@MessageBody() error){
+  console.log(error)
 }
 }

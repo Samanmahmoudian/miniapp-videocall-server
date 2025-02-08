@@ -9,11 +9,10 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100dvh; /* استفاده از dvh برای هماهنگی بهتر با WebView تلگرام */
+    height: 100dvh;
     background: #f8f9fa;
     overflow: hidden;
     position: relative;
-    padding-bottom: env(safe-area-inset-bottom);
 }
 
 .app-container {
@@ -22,49 +21,41 @@ body {
     max-width: 100%;
     background: #ffffff;
     display: flex;
-    flex-direction: column;
-    align-items: center;
     justify-content: center;
+    align-items: center;
+    flex-direction: column;
     overflow: hidden;
     position: relative;
-    padding: 15px;
+}
+
+.main-video,
+.small-video {
+    width: 98%;
+    height: 70%;
+    background: #000000;
+    border-radius: 15px;
+
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
 }
 
 .main-video {
-    width: 100%;
-    height: 60%;
-    max-height: 60dvh;
-    background: #000000;
-    border-radius: 15px;
-    border: 3px solid rgba(255, 255, 255, 0.9);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    margin-bottom: 10px;
+    transform: rotateY(180deg);
 }
 
 .small-video {
-    width: 80%;
-    height: 25%;
-    max-height: 25dvh;
-    background: #000000;
-    border-radius: 15px;
-    border: 3px solid rgba(255, 255, 255, 0.9);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin-bottom: 10%;
+    transform: rotateY(180deg);
 }
 
 .video-box video {
     width: 100%;
     height: 100%;
     border-radius: inherit;
-}
-
-.video-box video:playing + .loader {
-    display: none;
+    transform: rotateY(180deg);
 }
 
 .loader {
@@ -138,33 +129,24 @@ body {
     object-fit: cover;
 }
 
-/* **پشتیبانی از Landscape Mode در WebView تلگرام** */
-@media (max-width: 600px) and (orientation: landscape) {
+@media (max-width: 600px) and (orientation: portrait) {
     .app-container {
-        flex-direction: row;
-        justify-content: space-evenly;
-        padding: 5px;
+        flex-direction: column;
     }
 
-    .main-video {
-        width: 48%;
-        height: 100%;
+}
+@media (min-width: 601px) {
+    .app-container {
+        flex-direction: row; 
+        justify-content: space-evenly; 
     }
 
+    .main-video,
     .small-video {
-        width: 48%;
-        height: 100%;
-    }
-
-    .controls {
-        position: fixed;
-        bottom: 10px;
-        gap: 10px;
-    }
-
-    .control-button {
-        width: 40px;
-        height: 40px;
-        font-size: 10px;
+        width: 48%; 
+        height: 100%; 
     }
 }
+
+
+

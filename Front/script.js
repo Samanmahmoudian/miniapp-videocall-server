@@ -1,3 +1,5 @@
+
+
 const localstream = document.getElementById('localstream');
 const remotestream = document.getElementById('remotestream');
 const mutebtn = document.getElementById('mutebtn');
@@ -68,6 +70,7 @@ navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) 
     });
     localstream.srcObject = stream;
 }).catch((error) => {
+
     socket.emit('error' , error)
     console.error('Error accessing media devices:', error);
     alert('Could not access media devices. Please ensure permissions are granted.');

@@ -7,7 +7,7 @@
     <link href="./styles.css" rel="stylesheet"/>
 </head>
 <body>
-    <div class="app-container">
+    <div class="app-container"> 
         <div class="main-video video-box">
             <video id="remotestream" autoplay playsinline></video>
             <div class="loader">
@@ -22,11 +22,16 @@
         </div>
         <div class="controls">
             <button id="mutebtn" class="control-button mute">Mute</button>
+            <button id="hidebtn" class="control-button hide">Hide</button>  
+            <button id="switchbtn" class="control-button">Switch Camera</button>
             <button id="endbtn" class="control-button end-call">End Call</button>
-            <button id="hidebtn" class="control-button hide">Hide</button>
+            
         </div>
     </div>
 </body>
 <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+
+
+
 <script src="./script.js"></script>
 </html>

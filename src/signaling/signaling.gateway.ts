@@ -48,7 +48,6 @@ async handleAnswer(@MessageBody() message , @ConnectedSocket() client:Socket){
 @SubscribeMessage('ice')
 async handleIce(@MessageBody() message , @ConnectedSocket() client:Socket){
   const target = await this.clients.get(message.to)
-  console.log(message.ice)
   if(target){
     await target.emit('ice' , message.ice)
   }else{
@@ -80,13 +79,5 @@ async handleStartNewCall(@MessageBody() message , @ConnectedSocket() client:Sock
 
 }
 
-@SubscribeMessage('trackadded')
-async handleTrack(@MessageBody() message , @ConnectedSocket() client:Socket){
-  const target = await this.clients.get(message.to)
-  if(target){
-    await target.emit('trackadded' , message.trackadded)
-  }
-
-}
 
 }

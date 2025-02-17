@@ -1,5 +1,9 @@
 const localstream = document.getElementById('localstream');
 const remotestream = document.getElementById('remotestream');
+const muteBtn = document.getElementById('mutebtn')
+const hideBtn = document.getElementById('hidebtn')
+const switchBtn = document.getElementById('switchbtn')
+const endBtn = document.getElementById('endbtn')
 
 localstream.onplaying = function () {
     const loader = localstream.nextElementSibling;
@@ -78,8 +82,10 @@ const peerConnectionConfig ={
 let myId;
 let partnerId;
 let stream
+let isMuted = false;
+let isHidden = false;
 
-let peerConnection = new RTCPeerConnection(peerConnectionConfig)
+let peerConnection 
 
 async function shareMedia(){
     try{
@@ -92,6 +98,58 @@ async function shareMedia(){
 }
 shareMedia()
 
+muteBtn.addEventListener('click', () => {
+    isMuted = !isMuted;
+    stream.getAudioTracks().forEach(track => track.enabled = !isMuted);
+    muteBtn.textContent = isMuted ? 'Unmute' : 'Mute';
+});
+
+hideBtn.addEventListener('click', () => {
+    isHidden = !isHidden;
+    stream.getVideoTracks().forEach(track => track.enabled = !isHidden);
+    hideBtn.textContent = isHidden ? 'Show' : 'Hide';
+});
+
+switchBtn.addEventListener('click', async () => {
+    let videoTracks = stream.getVideoTracks();
+    if (videoTracks.length > 0) {
+        let newStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: videoTracks[0].getSettings().facingMode === 'user' ? 'environment' : 'user' },
+            audio: true
+        });
+        let sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
+        sender.replaceTrack(newStream.getVideoTracks()[0]);
+        localstream.srcObject = newStream;
+        stream = newStream;
+    }
+});
+
+
+
+endBtn.addEventListener('click', () => {
+    peerConnection.close();
+    socket.emit('endcall' , {endcall:'ended' , to:partnerId})
+    remotestream.srcObject = null
+    const loader = remotestream.nextElementSibling;
+    if (loader && loader.classList.contains('loader')) {
+        loader.style.display = '';
+    }
+    alert('Call Ended');
+    window.close();
+});
+
+socket.on('endcall' , async(endcall)=>{
+    if(endcall){
+        peerConnection.close()
+        remotestream.srcObject = null
+        const loader = remotestream.nextElementSibling;
+        if (loader && loader.classList.contains('loader')) {
+            loader.style.display = '';
+        }
+        socket.emit('startnewcall' , 'ended')
+        partnerId = ''
+    }
+})
 
 socket.on('my_id', (id) => {
     myId = id;
@@ -99,6 +157,7 @@ socket.on('my_id', (id) => {
 });
 
 socket.on('offer_state', async (offer) => {
+    peerConnection = new RTCPeerConnection(peerConnectionConfig)
     if (offer.state == 'ready') {
         partnerId = await offer.partnerId;
         console.log('Your partner id is: ' + offer.partnerId);
@@ -185,9 +244,3 @@ socket.on('ice', async(ice) => {
     }
 })
 
-peerConnection.onconnectionstatechange = async ()=>{
-    console.log('Connection state change:', peerConnection.connectionState);
-    if (peerConnection.connectionState === 'connected') {
-        console.log('Connected');
-    }
-}

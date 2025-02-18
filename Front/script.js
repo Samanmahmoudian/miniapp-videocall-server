@@ -84,12 +84,12 @@ let partnerId;
 let stream
 let isMuted = false;
 let isHidden = false;
-
+let camera_view = 'user'
 let peerConnection 
 
 async function shareMedia(){
     try{
-        stream = await navigator.mediaDevices.getUserMedia({video:true , audio:true})
+        stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:camera_view} , audio:true})
         localstream.srcObject = await stream
     }catch{
         console.log('camera denied')
@@ -98,6 +98,17 @@ async function shareMedia(){
 }
 shareMedia()
 
+
+async function endpeer(){
+    await peerConnection.close()
+    remotestream.srcObject = null
+    const loader = remotestream.nextElementSibling;
+    if (loader && loader.classList.contains('loader')) {
+        loader.style.display = '';
+    }
+    socket.emit('startnewcall' , 'ended')
+    partnerId = ''
+}
 muteBtn.addEventListener('click', () => {
     isMuted = !isMuted;
     stream.getAudioTracks().forEach(track => track.enabled = !isMuted);
@@ -111,18 +122,28 @@ hideBtn.addEventListener('click', () => {
 });
 
 switchBtn.addEventListener('click', async () => {
-    let videoTracks = stream.getVideoTracks();
-    if (videoTracks.length > 0) {
-        let newStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: videoTracks[0].getSettings().facingMode === 'user' ? 'environment' : 'user' },
-            audio: true
+    camera_view = camera_view === 'user' ? 'environment' : 'user';
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop()); 
+    }
+    try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: camera_view }, audio: true });
+        localstream.srcObject = stream;
+        const senders = peerConnection.getSenders();
+        senders.forEach(sender => {
+            if (sender.track.kind === "video") {
+                sender.replaceTrack(stream.getVideoTracks()[0]);
+            }
+            if (sender.track.kind === "audio") {
+                sender.replaceTrack(stream.getAudioTracks()[0]);
+            }
         });
-        let sender = peerConnection.getSenders().find(s => s.track.kind === 'video');
-        sender.replaceTrack(newStream.getVideoTracks()[0]);
-        localstream.srcObject = newStream;
-        stream = newStream;
+
+    } catch (error) {
+        console.log('Failed to switch camera:', error);
     }
 });
+
 
 
 
@@ -140,14 +161,7 @@ endBtn.addEventListener('click', () => {
 
 socket.on('endcall' , async(endcall)=>{
     if(endcall){
-        peerConnection.close()
-        remotestream.srcObject = null
-        const loader = remotestream.nextElementSibling;
-        if (loader && loader.classList.contains('loader')) {
-            loader.style.display = '';
-        }
-        socket.emit('startnewcall' , 'ended')
-        partnerId = ''
+        await endpeer()
     }
 })
 
@@ -191,6 +205,7 @@ async function startOffer(){
         }
     }
     const offer = await peerConnection.createOffer();
+    console.log(`offer : ${offer.sdp}`)
     await peerConnection.setLocalDescription(offer);
     socket.emit('offer', {offer: offer, to: partnerId});
 }
@@ -239,8 +254,15 @@ socket.on('answer', async (answer) => {
 socket.on('ice', async(ice) => {
     try {
         await peerConnection.addIceCandidate(new RTCIceCandidate(ice));
+        
     } catch (error) {
         console.error('Error adding ICE candidate:', error);
     }
 })
 
+socket.on('disconnected', async(messege)=>{
+    if(partnerId == messege){
+        await endpeer()
+
+    }
+})

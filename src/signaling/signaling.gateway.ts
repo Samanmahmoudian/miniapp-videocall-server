@@ -1,18 +1,18 @@
-import { ConnectedSocket, MessageBody, OnGatewayConnection, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
+import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server , Socket} from 'socket.io';
 import { SignalingService } from './signaling.service';
 let first_state = ''
 let second_state = ''
 
 @WebSocketGateway({cors:{origin:'*'}})
-export class SignalingGateway implements OnGatewayConnection {
+export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconnect {
 constructor( private signalingService:SignalingService){}
 @WebSocketServer()
 server:Server
 
 private clients = new Map()
 
-async handleConnection(@ConnectedSocket() client: Socket) {
+async handleConnection( client: Socket) {
 await this.clients.set(client.id , client)
 await client.emit('my_id' , client.id)
 const checkState = await this.signalingService.check_state(client.id)
@@ -28,6 +28,9 @@ if(checkState == 'required'){
 }
 }
 
+async handleDisconnect(client: Socket) {
+  this.server.emit('disconnected' , client.id)
+}
 @SubscribeMessage('offer')
 async handleOffer(@MessageBody() message , @ConnectedSocket() client:Socket){
   const target = await this.clients.get(message.to)
@@ -63,21 +66,18 @@ async handleEndcall(@MessageBody() message , @ConnectedSocket() client:Socket){
 
 @SubscribeMessage('startnewcall')
 async handleStartNewCall(@MessageBody() message , @ConnectedSocket() client:Socket){
-  if(message){
-    const checkState = await this.signalingService.check_state(client.id)
-    if(checkState == 'required'){
-      first_state = await client.id
-    }else{
-      second_state = await checkState?.second
-      const target = await this.clients.get(first_state)
-      await target.emit('offer_state', {state:'ready' , partnerId:second_state})
-      first_state = ''
-      second_state = ''
-    }
-    
-  }
+if(message){
+  this.handleConnection(client)
+}
 
 }
+
+
+@SubscribeMessage('disconnected')
+async handleDisconnected(@MessageBody() message , @ConnectedSocket() client:Socket){
+  client.broadcast.emit('disconnected' , message)
+}
+
 
 
 }

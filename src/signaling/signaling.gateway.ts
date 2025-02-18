@@ -78,6 +78,12 @@ async handleDisconnected(@MessageBody() message , @ConnectedSocket() client:Sock
   client.broadcast.emit('disconnected' , message)
 }
 
+@SubscribeMessage('error')
+async handleError(@MessageBody() message , @ConnectedSocket() client:Socket){
+if(message){
+console.log(message)
+}
 
+}
 
 }

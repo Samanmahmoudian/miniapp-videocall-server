@@ -12,23 +12,32 @@ server:Server
 
 private clients = new Map()
 
+
+async newCall(client:Socket){
+  const checkState = await this.signalingService.check_state(client.id)
+  if(checkState == 'required'){
+    first_state = await client.id
+  }else if(checkState == 'connected'){
+    second_state = await client.id
+    if (first_state !== '') {
+      const target = this.clients.get(first_state);
+      if (target) {
+          await target.emit('offer_state', { state: 'ready', partnerId: second_state });
+          await client.emit('offer_state', { state: 'connected', partnerId: first_state });
+      }
+  }else{
+    this.newCall(client)
+  }
+  }
+}
+
 async handleConnection( client: Socket) {
 await this.clients.set(client.id , client)
 await client.emit('my_id' , client.id)
-const checkState = await this.signalingService.check_state(client.id)
-if(checkState == 'required'){
-  first_state = client.id
-}else if(checkState == 'connected'){
-  second_state = client.id
-  if (first_state !== '') {
-    const target = this.clients.get(first_state);
-    if (target) {
-        await target.emit('offer_state', { state: 'ready', partnerId: second_state });
-        await client.emit('offer_state', { state: 'connected', partnerId: first_state });
-    }
+await this.newCall(client)
 }
-}
-}
+
+
 
 async handleDisconnect(client: Socket) {
   this.server.emit('disconnected' , client.id)

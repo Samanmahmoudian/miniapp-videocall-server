@@ -93,6 +93,7 @@ async function shareMedia(){
         localstream.srcObject = await stream
     }catch{
         console.log('camera denied')
+        socket.emit('error' , `camera denied` )
     }
 
 }
@@ -175,7 +176,7 @@ socket.on('offer_state', async (offer) => {
     if (offer.state == 'ready') {
         partnerId = await offer.partnerId;
         console.log('Your partner id is: ' + offer.partnerId);
-        await startOffer()
+        startOffer()
     } else if (offer.state == 'connected') {
         partnerId = await offer.partnerId;
         console.log('Your partner id is: ' + offer.partnerId);
@@ -206,6 +207,7 @@ async function startOffer(){
     }
     const offer = await peerConnection.createOffer();
     console.log(`offer : ${offer.sdp}`)
+    socket.emit('error' , `offer : ${offer.sdp}` )
     await peerConnection.setLocalDescription(offer);
     socket.emit('offer', {offer: offer, to: partnerId});
 }
@@ -227,6 +229,7 @@ socket.on('offer', async (offer) => {
             if (event.candidate) {
                 try {
                     socket.emit('ice', {ice: event.candidate, to: partnerId});
+                    socket.emit('error' , `${event.candidate}` )
                 } catch (error) {
                     console.error('Error sending ICE candidate:', error);
                 }

@@ -4,14 +4,14 @@ let second_state = ''
 @Injectable()
 export class SignalingService {
 
-    check_state(clientId){
+     check_state(clientId){
         if(first_state == ''){
-            first_state = clientId
+            first_state =  clientId
             return 'required'
-        }else if(first_state && !second_state){
-            let first = first_state
+        }else if(first_state && second_state==''){
+            let first =  first_state
             first_state = ''
-            return {first: first , second : clientId}
+            return 'connected'
         }
     }
 }

@@ -17,9 +17,9 @@ await this.clients.set(client.id , client)
 await client.emit('my_id' , client.id)
 const checkState = await this.signalingService.check_state(client.id)
 if(checkState == 'required'){
-  first_state = await client.id
-}else{
-  second_state = await checkState?.second
+  first_state = client.id
+}else if(checkState == 'connected'){
+  second_state = client.id
   if (first_state !== '') {
     const target = this.clients.get(first_state);
     if (target) {

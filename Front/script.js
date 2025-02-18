@@ -175,7 +175,7 @@ socket.on('offer_state', async (offer) => {
     if (offer.state == 'ready') {
         partnerId = await offer.partnerId;
         console.log('Your partner id is: ' + offer.partnerId);
-        startOffer()
+        await startOffer()
     } else if (offer.state == 'connected') {
         partnerId = await offer.partnerId;
         console.log('Your partner id is: ' + offer.partnerId);

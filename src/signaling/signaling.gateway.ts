@@ -20,11 +20,13 @@ if(checkState == 'required'){
   first_state = await client.id
 }else{
   second_state = await checkState?.second
-  const target = await this.clients.get(first_state)
-  await target.emit('offer_state', {state:'ready' , partnerId:second_state})
-  await client.emit('offer_state' , {state:'connected' , partnerId:first_state})
-  first_state = ''
-  second_state = ''
+  if (first_state !== '') {
+    const target = this.clients.get(first_state);
+    if (target) {
+        await target.emit('offer_state', { state: 'ready', partnerId: second_state });
+        await client.emit('offer_state', { state: 'connected', partnerId: first_state });
+    }
+}
 }
 }
 

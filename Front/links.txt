@@ -36,3 +36,27 @@ var myPeerConnection = new RTCPeerConnection({
      },
 
 my ip = 2.176.229.75
+
+
+
+
+    // ✅ ایجاد DataChannel برای ارسال پیام 'ready'
+    const dataChannel = peerConnection.createDataChannel("chat");
+    dataChannel.onopen = () => {
+        console.log("✅ DataChannel باز شد!");
+        dataChannel.send("ready"); // 🔹 فرستادن پیام 'ready'
+    };
+    
+    dataChannel.onmessage = (event) => {
+        console.log("📩 پیام دریافت شد:", event.data);
+    };
+
+    
+
+
+         peerConnection.ondatachannel = (event) => {
+            const dataChannel = event.channel;
+            dataChannel.onmessage = (event) => {
+                console.log("📩 پیام دریافت شد:", event.data); // 🔹 لاگ پیام 'ready'
+            };
+        };

@@ -3,13 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="webkit-playsinline" content="true">
+    <meta name="user-gesture-required" content="false">
+
+
     <title>Video Call</title>
     <link href="./styles.css" rel="stylesheet"/>
 </head>
 <body>
     <div class="app-container"> 
         <div class="main-video video-box">
-            <video id="remotestream" autoplay playsinline></video>
+            <video id="remotestream" autoplay playsinline ></video>
             <div class="loader">
                 <div></div><div></div><div></div><div></div><div></div><div></div>
             </div>
@@ -29,9 +33,11 @@
         </div>
     </div>
 </body>
+
+  
 <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 
 
 
-<script src="./app.js"></script>
+<script src="./script.js"></script>
 </html>

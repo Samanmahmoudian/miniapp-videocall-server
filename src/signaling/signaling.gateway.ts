@@ -98,20 +98,4 @@ console.log(message)
 }
 
 
-@SubscribeMessage('offerdc')
-async handleOfferDc(@MessageBody() message , @ConnectedSocket() client:Socket){
-  const target = await this.clients.get(message.to)
-  await target.emit('offerdc' , message.offer)
-}
-
-@SubscribeMessage('answerdc')
-async handleAnswerDc(@MessageBody() message , @ConnectedSocket() client:Socket){
-    const target =  await this.clients.get(message.to)
-    if(target){
-      await target.emit('answerdc' , message.answer)
-    }else{
-      console.log('answer is undefined')
-    }
-
-}
 }

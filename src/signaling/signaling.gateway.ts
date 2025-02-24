@@ -73,6 +73,11 @@ async handleIce(@MessageBody() message , @ConnectedSocket() client:Socket){
 async handleEndcall(@MessageBody() message , @ConnectedSocket() client:Socket){
   const target = await this.clients.get(message.to)
   await target.emit('endcall' , message.endcall)
+  if(first_state == client.id){
+    first_state = ''
+  }else if(second_state == client.id){
+    second_state = ''
+  }
 }
 
 @SubscribeMessage('startnewcall')
@@ -87,6 +92,12 @@ if(message){
 @SubscribeMessage('disconnected')
 async handleDisconnected(@MessageBody() message , @ConnectedSocket() client:Socket){
   client.broadcast.emit('disconnected' , message)
+  if(first_state == client.id){
+    first_state = ''
+  }else if(second_state == client.id){
+    second_state = ''
+  }
+
 }
 
 @SubscribeMessage('error')

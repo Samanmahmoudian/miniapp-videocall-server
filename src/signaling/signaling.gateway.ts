@@ -40,7 +40,14 @@ await this.newCall(client)
 
 
 async handleDisconnect(client: Socket) {
-  this.server.emit('disconnected' , client.id)
+  if(first_state == client.id){
+    first_state = ''
+  }else if(second_state == client.id){
+    second_state = ''
+  }
+  this.handleDisconnected(client.id , client)
+  await this.clients.delete(client.id)
+
 }
 @SubscribeMessage('offer')
 async handleOffer(@MessageBody() message , @ConnectedSocket() client:Socket){
@@ -92,11 +99,7 @@ if(message){
 @SubscribeMessage('disconnected')
 async handleDisconnected(@MessageBody() message , @ConnectedSocket() client:Socket){
   client.broadcast.emit('disconnected' , message)
-  if(first_state == client.id){
-    first_state = ''
-  }else if(second_state == client.id){
-    second_state = ''
-  }
+
 
 }
 

@@ -79,6 +79,7 @@ async handleIce(@MessageBody() message , @ConnectedSocket() client:Socket){
 @SubscribeMessage('endcall')
 async handleEndcall(@MessageBody() message , @ConnectedSocket() client:Socket){
   const target = await this.clients.get(message.to)
+  console.log(target)
   await target.emit('endcall' , message.endcall)
   if(first_state == client.id){
     first_state = ''

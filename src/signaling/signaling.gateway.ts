@@ -77,9 +77,9 @@ async handleIce(@MessageBody() message , @ConnectedSocket() client:Socket){
   }
 }
 
-@SubscribeMessage('endcall')
-async handleEndcall(@MessageBody() message , @ConnectedSocket() client:Socket){
-client.broadcast.emit('endcall' ,message )
+@SubscribeMessage('nextcall')
+async handleNextcall(@MessageBody() message , @ConnectedSocket() client:Socket){
+client.broadcast.emit('nextcall' ,message )
   if(first_state == client.id){
     first_state = ''
   }else if(second_state == client.id){

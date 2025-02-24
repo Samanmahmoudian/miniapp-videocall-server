@@ -1,6 +1,7 @@
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server , Socket} from 'socket.io';
 import { SignalingService } from './signaling.service';
+import { measureMemory } from 'vm';
 let first_state = ''
 let second_state = ''
 
@@ -78,9 +79,7 @@ async handleIce(@MessageBody() message , @ConnectedSocket() client:Socket){
 
 @SubscribeMessage('endcall')
 async handleEndcall(@MessageBody() message , @ConnectedSocket() client:Socket){
-  const target = await this.clients.get(message.to)
-  console.log(target)
-  await target.emit('endcall' , message.endcall)
+client.broadcast.emit('endcall' ,message )
   if(first_state == client.id){
     first_state = ''
   }else if(second_state == client.id){
@@ -101,14 +100,6 @@ if(message){
 async handleDisconnected(@MessageBody() message , @ConnectedSocket() client:Socket){
   client.broadcast.emit('disconnected' , message)
 
-
-}
-
-@SubscribeMessage('error')
-async handleError(@MessageBody() message , @ConnectedSocket() client:Socket){
-if(message){
-console.log(message)
-}
 
 }
 

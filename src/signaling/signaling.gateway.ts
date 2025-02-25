@@ -106,8 +106,6 @@ async handleDisconnected(@MessageBody() message , @ConnectedSocket() client:Sock
 @SubscribeMessage('facingmode')
 async handleFacingMode(@MessageBody() message , @ConnectedSocket() client:Socket){
   const target = await this.clients.get(message.to)
-  if(target){
     await target.emit('facingmode' , message.facingmode)
-  }
 }
 }

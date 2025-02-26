@@ -12,6 +12,8 @@ export class SignalingService {
             let first =  first_state
             first_state = ''
             return 'connected'
+        }else{
+            return 'waiting'
         }
     }
 }

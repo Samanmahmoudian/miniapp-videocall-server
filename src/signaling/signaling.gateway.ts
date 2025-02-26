@@ -80,7 +80,10 @@ async handleIce(@MessageBody() message , @ConnectedSocket() client:Socket){
 
 @SubscribeMessage('nextcall')
 async handleNextcall(@MessageBody() message , @ConnectedSocket() client:Socket){
-client.broadcast.emit('nextcall' ,message )
+const target = await this.clients.get(message)
+if(target){
+  await target.emit('nextcall' , message)
+}
   if(first_state == client.id){
     first_state = ''
   }else if(second_state == client.id){
@@ -103,9 +106,4 @@ async handleDisconnected(@MessageBody() message , @ConnectedSocket() client:Sock
 
 }
 
-@SubscribeMessage('facingmode')
-async handleFacingMode(@MessageBody() message , @ConnectedSocket() client:Socket){
-  const target = await this.clients.get(message.to)
-    await target.emit('facingmode' , message.facingmode)
-}
 }

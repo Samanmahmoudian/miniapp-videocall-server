@@ -23,8 +23,8 @@ async newCall(client:Socket){
     if (first_state !== '') {
       const target = await this.clients.get(first_state);
       if (target) {
-           target.emit('offer_state', { state: 'ready', partnerId: second_state });
-           client.emit('offer_state', { state: 'connected', partnerId: first_state });
+          target.emit('offer_state', { state: 'ready', partnerId: await second_state });
+          client.emit('offer_state', { state: 'connected', partnerId: await first_state });
       }
   }else{
     this.newCall(client)

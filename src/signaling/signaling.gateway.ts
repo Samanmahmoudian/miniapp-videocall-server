@@ -56,7 +56,10 @@ async handleDisconnect(client: Socket) {
 @SubscribeMessage('offer')
 async handleOffer(@MessageBody() message , @ConnectedSocket() client:Socket){
   const target =  await this.clients.get(message.to)
-  await target.emit('offer' , message.offer)
+  if(target){
+    await target.emit('offer' , message.offer)
+  }
+
 }
 
 @SubscribeMessage('answer')

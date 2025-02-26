@@ -93,7 +93,7 @@ if(target){
 
 @SubscribeMessage('startnewcall')
 async handleStartNewCall( @ConnectedSocket() client:Socket){
-  this.handleStart(client)
+  await this.newCall(client)
 
 
 }

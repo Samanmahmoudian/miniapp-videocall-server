@@ -89,10 +89,9 @@ client.broadcast.emit('nextcall' ,message )
 }
 
 @SubscribeMessage('startnewcall')
-async handleStartNewCall(@MessageBody() message , @ConnectedSocket() client:Socket){
-if(message){
+async handleStartNewCall( @ConnectedSocket() client:Socket){
   this.handleStart(client)
-}
+
 
 }
 

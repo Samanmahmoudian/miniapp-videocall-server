@@ -15,13 +15,13 @@ private clients = new Map()
 
 
 async newCall(client:Socket){
-  const checkState =  this.signalingService.check_state(client.id)
+  const checkState = await this.signalingService.check_state(client.id)
   if(checkState == 'required'){
     first_state =  client.id
   }else if(checkState == 'connected'){
     second_state =  client.id
     if (first_state !== '') {
-      const target = this.clients.get(first_state);
+      const target = await this.clients.get(first_state);
       if (target) {
            target.emit('offer_state', { state: 'ready', partnerId: second_state });
            client.emit('offer_state', { state: 'connected', partnerId: first_state });
@@ -55,13 +55,13 @@ async handleDisconnect(client: Socket) {
 }
 @SubscribeMessage('offer')
 async handleOffer(@MessageBody() message , @ConnectedSocket() client:Socket){
-  const target =  this.clients.get(message.to)
+  const target =  await this.clients.get(message.to)
   await target.emit('offer' , message.offer)
 }
 
 @SubscribeMessage('answer')
 async handleAnswer(@MessageBody() message , @ConnectedSocket() client:Socket){
-    const target =   this.clients.get(message.to)
+    const target = await  this.clients.get(message.to)
     if(target){
        target.emit('answer' , message.answer)
     }else{
@@ -72,17 +72,15 @@ async handleAnswer(@MessageBody() message , @ConnectedSocket() client:Socket){
 
 @SubscribeMessage('ice')
 async handleIce(@MessageBody() message , @ConnectedSocket() client:Socket){
-  const target =  this.clients.get(message.to)
+  const target =  await this.clients.get(message.to)
   if(target){
      target.emit('ice' , message.ice)
-  }else{
-    console.log('ice is undefined')
   }
 }
 
 @SubscribeMessage('nextcall')
 async handleNextcall(@MessageBody() message , @ConnectedSocket() client:Socket){
-const target =  this.clients.get(message)
+const target =  await this.clients.get(message)
 if(target){
    target.emit('nextcall' , message)
 }

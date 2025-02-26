@@ -6,7 +6,7 @@ let first_state = ''
 let second_state = ''
 
 @WebSocketGateway({cors:{origin:'*'}})
-export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconnect {
+export class SignalingGateway implements OnGatewayDisconnect {
 constructor( private signalingService:SignalingService){}
 @WebSocketServer()
 server:Server
@@ -32,13 +32,14 @@ async newCall(client:Socket){
   }
 }
 
-async handleConnection( client: Socket) {
-await this.clients.set(client.id , client)
-await client.emit('my_id' , client.id)
-await this.newCall(client)
+
+
+@SubscribeMessage('readytostart')
+async handleStart(@ConnectedSocket() client:Socket){
+  await this.clients.set(client.id , client)
+  await client.emit('my_id' , client.id)
+  await this.newCall(client)
 }
-
-
 
 async handleDisconnect(client: Socket) {
   if(first_state == client.id){
@@ -90,7 +91,7 @@ client.broadcast.emit('nextcall' ,message )
 @SubscribeMessage('startnewcall')
 async handleStartNewCall(@MessageBody() message , @ConnectedSocket() client:Socket){
 if(message){
-  this.handleConnection(client)
+  this.handleStart(client)
 }
 
 }

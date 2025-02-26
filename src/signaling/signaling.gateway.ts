@@ -82,7 +82,7 @@ async handleIce(@MessageBody() message , @ConnectedSocket() client:Socket){
 async handleNextcall(@MessageBody() message , @ConnectedSocket() client:Socket){
 const target =  await this.clients.get(message)
 if(target){
-   target.emit('nextcall' , message)
+   await target.emit('nextcall' , message)
 }
   if(first_state == client.id){
     first_state = ''

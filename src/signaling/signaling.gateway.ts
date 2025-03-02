@@ -16,13 +16,13 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
           await this.clients.delete(userTelegramId)
         }
         await this.clients.set(userTelegramId , client)
-        await this.startNewCall(userTelegramId)
       }
     async handleDisconnect(client:Socket) {
 
-      
+ 
         for (let [key , value] of this.clients.entries()){
           if(value == client){
+            client.broadcast.emit('message' , {type: 'disconnect' , data: {key}})
             this.clients.delete(key)
           }
         }

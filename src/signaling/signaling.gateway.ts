@@ -4,7 +4,7 @@ import { query } from 'express';
 import { Server, Socket } from 'socket.io';
 let queue:any[] = []
 
-@WebSocketGateway()
+@WebSocketGateway({cors:true})
 export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconnect{
   @WebSocketServer()
   server:Server

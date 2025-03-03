@@ -35,7 +35,6 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
       }else if(queue.length == 1){
           const caller = await this.clients.get(TelegramId)
           const callee = await this.clients.get(queue[0])
-          queue = []
           console.log(queue)
           if(callee){
             caller.emit('caller' , queue[0])

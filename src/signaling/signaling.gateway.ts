@@ -11,7 +11,7 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
   private clients = new Map()
 
     async handleConnection(client:Socket) {
-        const userTelegramId = await client.handshake.query.userTelegramId?.toString()
+        const userTelegramId = await String(client.handshake.query.userTelegramId)
         if(this.clients.has(userTelegramId)){
           await this.clients.delete(userTelegramId)
         }

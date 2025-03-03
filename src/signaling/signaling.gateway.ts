@@ -36,6 +36,7 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
       }else if(queue.length == 1){
           const caller = await this.clients.get(TelegramId)
           const callee = await this.clients.get(queue[0])
+          queue = []
           console.log(queue)
           if(callee){
             caller.emit('message' , {type: 'caller' , data: queue[0]})
@@ -49,7 +50,8 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
         const caller = await this.clients.get(queue[0])
         const callee = await this.clients.get(queue[1])
         if(caller && callee){
-          await caller.emit('startNewCall' , {partnerId: queue[1]})
+          await caller.emit('message' , {type: 'caller' , data: queue[1]})
+          await callee.emit('message' , {type: 'callee' , data: queue[0]})
           queue = []
         }else{
           this.startNewCall(TelegramId) 

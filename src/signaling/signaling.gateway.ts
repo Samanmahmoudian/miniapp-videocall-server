@@ -38,8 +38,8 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
           const callee = await this.clients.get(queue[0])
           console.log(queue)
           if(callee){
-            caller.emit('message' , {type: 'caller' , data: {partnerId: queue[0]}})
-            callee.emit('message' , {type: 'callee' , data: {partnerId: TelegramId}})
+            caller.emit('message' , {type: 'caller' , data: queue[0]})
+            callee.emit('message' , {type: 'callee' , data: TelegramId})
             queue = []
           }else{
             this.startNewCall(TelegramId)

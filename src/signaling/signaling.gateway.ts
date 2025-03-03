@@ -16,7 +16,6 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
           await this.clients.delete(userTelegramId)
         }
         await this.clients.set(userTelegramId , client)
-        await this.startNewCall(userTelegramId)
       }
     async handleDisconnect(client:Socket) {
 

@@ -1,6 +1,5 @@
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-import { subscribe } from 'diagnostics_channel';
-import { query } from 'express';
+
 import { Server, Socket } from 'socket.io';
 let queue:any[] = []
 
@@ -39,8 +38,8 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
           queue = []
           console.log(queue)
           if(callee){
-            caller.emit('message' , {type: 'caller' , data: queue[0]})
-            callee.emit('message' , {type: 'callee' , data: TelegramId})
+            caller.emit('caller' , queue[0])
+            callee.emit('callee' , TelegramId)
             queue = []
           }else{
             this.startNewCall(TelegramId)
@@ -50,8 +49,8 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
         const caller = await this.clients.get(queue[0])
         const callee = await this.clients.get(queue[1])
         if(caller && callee){
-          await caller.emit('message' , {type: 'caller' , data: queue[1]})
-          await callee.emit('message' , {type: 'callee' , data: queue[0]})
+          await caller.emit('caller' , queue[1])
+          await callee.emit('callee' , queue[0])
           queue = []
         }else{
           this.startNewCall(TelegramId) 
@@ -66,12 +65,29 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
   }
 
 
-  @SubscribeMessage('message')
-  async handleOffer(@MessageBody() message , @ConnectedSocket() client:Socket){
-    const target =  await this.clients.get(message.to)
-    if(target){
-      await target.emit('message' , {type: message.type , data: message.data})
+
+
+  @SubscribeMessage('ice')
+  async handleIce(@MessageBody() message , @ConnectedSocket() client:Socket){
+    const target = await this.clients.get(message.to)
+    if (target){
+      await target.emit('ice' , message.data)
     }
   }
 
+  @SubscribeMessage('offer')
+  async handleOffer(@MessageBody() message , @ConnectedSocket() client:Socket){
+    const target = await this.clients.get(message.to)
+    if (target){
+      await target.emit('offer' , message.data)
+    }
+  }
+
+  @SubscribeMessage('answer')
+  async handleAnswer(@MessageBody() message , @ConnectedSocket() client:Socket){
+    const target = await this.clients.get(message.to)
+    if (target){
+      await target.emit('answer' , message.data)
+    }
+  }
 }

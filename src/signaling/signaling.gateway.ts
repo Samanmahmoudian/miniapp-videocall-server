@@ -41,9 +41,6 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   async connectClients() {
-    const release = await mutex.acquire(); // Acquire the mutex lock
-
-    try {
       while (queue.length > 0 && queue.length % 2 === 0) {
         const caller = this.clients.get(queue[0]);
         const callee = this.clients.get(queue[1]);
@@ -54,9 +51,6 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
         }
         queue.splice(0, 2);
       }
-    } finally {
-      release(); // Release the mutex lock
-    }
   }
 
   @SubscribeMessage('startNewCall')

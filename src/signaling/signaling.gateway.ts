@@ -1,7 +1,7 @@
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 
 import { Server, Socket } from 'socket.io';
-let queue:any[] = []
+let queue:String[] = []
 
 @WebSocketGateway({cors:{origin:'https://front-n04k.onrender.com'}})
 export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconnect{
@@ -17,6 +17,8 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
         await this.clients.set(userTelegramId , client)
         console.log(userTelegramId)
       }
+
+
     async handleDisconnect(client:Socket) {
         for (let [key , value] of this.clients.entries()){
           if(value == client){
@@ -30,18 +32,25 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
 
     async startNewCall(TelegramId){
       if(queue.length == 0){
-        queue.push(TelegramId)
-        console.log(queue)
+        if(this.clients.has(TelegramId)){
+          queue.push(TelegramId)
+          console.log(queue)
+        }
       }else if(queue.length == 1){
           const caller = await this.clients.get(TelegramId)
           const callee = await this.clients.get(queue[0])
           console.log(queue)
-          if(callee){
+          if(callee && caller){
             caller.emit('caller' , queue[0])
             callee.emit('callee' , TelegramId)
-            queue = []
+            queue.splice(0 , 1)
+            if(this.clients.has(TelegramId)){
+              this.startNewCall(TelegramId)
+            }
           }else{
-            this.startNewCall(TelegramId)
+            if(this.clients.has(TelegramId)){
+              this.startNewCall(TelegramId)
+            }
           }
       
       }else if(queue.length > 1){
@@ -50,7 +59,8 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
         if(caller && callee){
           await caller.emit('caller' , queue[1])
           await callee.emit('callee' , queue[0])
-          queue = []
+          queue.splice(0 , 2)
+          this.startNewCall(TelegramId)
         }else{
           this.startNewCall(TelegramId) 
         }

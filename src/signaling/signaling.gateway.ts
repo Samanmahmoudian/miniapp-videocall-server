@@ -31,7 +31,7 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
     }
 
     async startNewCall(TelegramId){
-      if(!queue.indexOf(TelegramId)){
+      if(queue.indexOf(TelegramId) == -1){
         await queue.push(TelegramId)
       }
       console.log(queue)

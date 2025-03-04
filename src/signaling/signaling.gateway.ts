@@ -24,6 +24,7 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
           if(value == client){
             client.broadcast.emit('message' , {type: 'disconnect' , data: {key}})
             this.clients.delete(key)
+            queue = queue.filter(keys => keys != key)
           }
         }
     }

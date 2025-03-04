@@ -31,44 +31,23 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
     }
 
     async startNewCall(TelegramId){
-      if(queue.length == 0){
-        if(this.clients.has(TelegramId)){
-          queue.push(TelegramId)
-          console.log(queue)
-        }
-      }else if(queue.length == 1){
-          const caller = await this.clients.get(TelegramId)
-          const callee = await this.clients.get(queue[0])
-          console.log(queue)
-          if(callee && caller){
-            caller.emit('caller' , queue[0])
-            callee.emit('callee' , TelegramId)
-            queue.splice(0 , 1)
-            if(this.clients.has(TelegramId)){
-              this.startNewCall(TelegramId)
-            }
-          }else{
-            if(this.clients.has(TelegramId)){
-              this.startNewCall(TelegramId)
-            }
-          }
-      
-      }else if(queue.length > 1){
-        const caller = await this.clients.get(queue[0])
-        const callee = await this.clients.get(queue[1])
-        if(caller && callee){
-          await caller.emit('caller' , queue[1])
-          await callee.emit('callee' , queue[0])
-          queue.splice(0 , 2)
-          this.startNewCall(TelegramId)
-        }else{
-          this.startNewCall(TelegramId) 
-        }
-
-    }
+      await queue.push(TelegramId)
+      console.log(queue)
+      await this.connectClients()
   }
 
-
+  async connectClients(){
+    while(queue.length>0 && queue.length % 2 == 0){
+      const caller = await this.clients.get(queue[0])
+      const callee = await this.clients.get(queue[1])
+      if(caller && callee){
+        caller.emit('caller' , queue[1])
+        callee.emit('callee' , queue[0])
+        await queue.splice(0,2)
+      }
+      
+    }
+  }
 
 
   @SubscribeMessage('startNewCall')

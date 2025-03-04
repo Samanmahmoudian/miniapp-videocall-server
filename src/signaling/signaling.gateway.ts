@@ -13,7 +13,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   async handleConnection(client: Socket) {
     const userTelegramId = String(client.handshake.query.userTelegramId);
-    const release = await mutex.acquire();
+    const release = await mutex.acquire(); // Acquire the mutex lock
 
     try {
       if (this.clients.has(userTelegramId)) {
@@ -21,14 +21,14 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
       }
       this.clients.set(userTelegramId, client);
     } finally {
-      release();
+      release(); // Release the mutex lock
     }
 
     console.log(userTelegramId);
   }
 
   async handleDisconnect(client: Socket) {
-    const release = await mutex.acquire();
+    const release = await mutex.acquire(); // Acquire the mutex lock
 
     try {
       for (let [key, value] of this.clients.entries()) {
@@ -39,14 +39,14 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
         }
       }
     } finally {
-      release();
+      release(); // Release the mutex lock
     }
 
     console.log(queue);
   }
 
   async startNewCall(TelegramId: string) {
-    const release = await mutex.acquire();
+    const release = await mutex.acquire(); // Acquire the mutex lock
 
     try {
       if (queue.indexOf(TelegramId) === -1) {
@@ -55,12 +55,12 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
       console.log(queue);
       await this.connectClients();
     } finally {
-      release();
+      release(); // Release the mutex lock
     }
   }
 
   async connectClients() {
-    const release = await mutex.acquire();
+    const release = await mutex.acquire(); // Acquire the mutex lock
 
     try {
       while (queue.length > 0 && queue.length % 2 === 0) {
@@ -74,7 +74,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
         queue.splice(0, 2);
       }
     } finally {
-      release();
+      release(); // Release the mutex lock
     }
   }
 

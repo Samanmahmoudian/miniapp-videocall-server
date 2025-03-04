@@ -5,7 +5,7 @@ import { Mutex } from 'async-mutex';
 let queue: string[] = [];
 const mutex = new Mutex();
 
-@WebSocketGateway({ cors: { origin: 'https://front-n04k.onrender.com' } })
+@WebSocketGateway({ cors: { origin: '*' } })
 export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
@@ -13,24 +13,14 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   async handleConnection(client: Socket) {
     const userTelegramId = String(client.handshake.query.userTelegramId);
-    const release = await mutex.acquire(); // Acquire the mutex lock
-
-    try {
       if (this.clients.has(userTelegramId)) {
         this.clients.delete(userTelegramId);
       }
       this.clients.set(userTelegramId, client);
-    } finally {
-      release(); // Release the mutex lock
-    }
-
-    console.log(userTelegramId);
+      console.log(userTelegramId);
   }
 
   async handleDisconnect(client: Socket) {
-    const release = await mutex.acquire(); // Acquire the mutex lock
-
-    try {
       for (let [key, value] of this.clients.entries()) {
         if (value === client) {
           client.broadcast.emit('disconnected', key);
@@ -38,25 +28,16 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
           this.clients.delete(key);
         }
       }
-    } finally {
-      release(); // Release the mutex lock
-    }
 
     console.log(queue);
   }
 
   async startNewCall(TelegramId: string) {
-    const release = await mutex.acquire(); // Acquire the mutex lock
-
-    try {
       if (queue.indexOf(TelegramId) === -1) {
         queue.push(TelegramId);
       }
       console.log(queue);
       await this.connectClients();
-    } finally {
-      release(); // Release the mutex lock
-    }
   }
 
   async connectClients() {

@@ -18,12 +18,11 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
         console.log(userTelegramId)
       }
     async handleDisconnect(client:Socket) {
-
- 
         for (let [key , value] of this.clients.entries()){
           if(value == client){
+            client.broadcast.emit('disconnected' , key)
+            queue = await queue.filter(keys => keys !== key)
             this.clients.delete(key)
-            queue = queue.filter(keys => keys != key)
             console.log(queue)
           }
         }
@@ -59,6 +58,9 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
     }
   }
 
+
+
+
   @SubscribeMessage('startNewCall')
   async handleStartNewCall(@MessageBody() telegramId , @ConnectedSocket() client:Socket){
     await this.startNewCall(telegramId)
@@ -88,6 +90,15 @@ export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconne
     const target = await this.clients.get(message.to)
     if (target){
       await target.emit('answer' , message.data)
+    }
+  }
+
+
+  @SubscribeMessage('nextcall')
+  async handleNextCall(@MessageBody() Id , @ConnectedSocket() client:Socket){
+    const target = await this.clients.get(Id)
+    if (target){
+      await target.emit('nextcall' , 'nextcall')
     }
   }
 }

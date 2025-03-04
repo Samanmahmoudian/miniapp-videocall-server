@@ -37,19 +37,14 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
         queue.push(TelegramId);
       }
       console.log(queue);
-      await this.connectClients();
+      this.connectClients();
   }
 
   async connectClients() {
       while (queue.length > 0 && queue.length % 2 === 0) {
-        const caller = this.clients.get(queue[0]);
-        const callee = this.clients.get(queue[1]);
-        if (caller && callee) {
-          caller.emit('caller', queue[1]);
-          callee.emit('callee', queue[0]);
-          console.log('sent');
-        }
-        queue.splice(0, 2);
+        await this.clients.get(queue[0]).emit('caller' , queue[1]);
+        await this.clients.get(queue[1]).emit('callee' , queue[0])
+        await queue.splice(0,2)
       }
   }
 

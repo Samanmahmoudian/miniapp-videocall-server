@@ -41,11 +41,13 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   async connectClients() {
-      while (queue.length > 0 && queue.length % 2 === 0) {
+    const release = await mutex.acquire()
+      while (queue.length > 1 && queue.length % 2 == 0) {
         await this.clients.get(queue[0]).emit('caller' , queue[1]);
         await this.clients.get(queue[1]).emit('callee' , queue[0])
         await queue.splice(0,2)
       }
+      release()
   }
 
   @SubscribeMessage('startNewCall')

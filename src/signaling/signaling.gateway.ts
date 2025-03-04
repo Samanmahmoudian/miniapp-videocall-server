@@ -1,95 +1,117 @@
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
-
 import { Server, Socket } from 'socket.io';
-let queue:String[] = []
+import { Mutex } from 'async-mutex';
 
-@WebSocketGateway({cors:{origin:'https://front-n04k.onrender.com'}})
-export class SignalingGateway implements OnGatewayConnection , OnGatewayDisconnect{
+let queue: string[] = [];
+const mutex = new Mutex();
+
+@WebSocketGateway({ cors: { origin: 'https://front-n04k.onrender.com' } })
+export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
-  server:Server
-  private clients = new Map()
+  server: Server;
+  private clients = new Map();
 
-    async handleConnection(client:Socket) {
-        const userTelegramId = await String(client.handshake.query.userTelegramId)
-        if(this.clients.has(userTelegramId)){
-          await this.clients.delete(userTelegramId)
-        }
-        await this.clients.set(userTelegramId , client)
-        console.log(userTelegramId)
+  async handleConnection(client: Socket) {
+    const userTelegramId = String(client.handshake.query.userTelegramId);
+    const release = await mutex.acquire();
+
+    try {
+      if (this.clients.has(userTelegramId)) {
+        this.clients.delete(userTelegramId);
       }
-
-
-    async handleDisconnect(client:Socket) {
-        for (let [key , value] of this.clients.entries()){
-          if(value == client){
-            client.broadcast.emit('disconnected' , key)
-            queue = await queue.filter(keys => keys !== key)
-            this.clients.delete(key)
-            console.log(queue)
-          }
-        }
+      this.clients.set(userTelegramId, client);
+    } finally {
+      release();
     }
 
-    async startNewCall(TelegramId){
-      if(queue.indexOf(TelegramId) == -1){
-        await queue.push(TelegramId)
-      }
-      console.log(queue)
-      await this.connectClients()
+    console.log(userTelegramId);
   }
 
-  async connectClients(){
-    while(queue.length>0 && queue.length % 2 == 0){
-      const caller = await this.clients.get(queue[0])
-      const callee = await this.clients.get(queue[1])
-      if(caller && callee){
-        await caller.emit('caller' , queue[1])
-        await callee.emit('callee' , queue[0])
-        console.log('sent')
+  async handleDisconnect(client: Socket) {
+    const release = await mutex.acquire();
+
+    try {
+      for (let [key, value] of this.clients.entries()) {
+        if (value === client) {
+          client.broadcast.emit('disconnected', key);
+          queue = queue.filter(keys => keys !== key);
+          this.clients.delete(key);
+        }
       }
-      queue.splice(0,2)
+    } finally {
+      release();
+    }
+
+    console.log(queue);
+  }
+
+  async startNewCall(TelegramId: string) {
+    const release = await mutex.acquire();
+
+    try {
+      if (queue.indexOf(TelegramId) === -1) {
+        queue.push(TelegramId);
+      }
+      console.log(queue);
+      await this.connectClients();
+    } finally {
+      release();
     }
   }
 
+  async connectClients() {
+    const release = await mutex.acquire();
+
+    try {
+      while (queue.length > 0 && queue.length % 2 === 0) {
+        const caller = this.clients.get(queue[0]);
+        const callee = this.clients.get(queue[1]);
+        if (caller && callee) {
+          caller.emit('caller', queue[1]);
+          callee.emit('callee', queue[0]);
+          console.log('sent');
+        }
+        queue.splice(0, 2);
+      }
+    } finally {
+      release();
+    }
+  }
 
   @SubscribeMessage('startNewCall')
-  async handleStartNewCall(@MessageBody() telegramId , @ConnectedSocket() client:Socket){
-    await this.startNewCall(telegramId)
+  async handleStartNewCall(@MessageBody() telegramId: string, @ConnectedSocket() client: Socket) {
+    await this.startNewCall(telegramId);
   }
 
-
-
-
   @SubscribeMessage('ice')
-  async handleIce(@MessageBody() message , @ConnectedSocket() client:Socket){
-    const target = await this.clients.get(message.to)
-    if (target){
-      await target.emit('ice' , message.data)
+  async handleIce(@MessageBody() message: any, @ConnectedSocket() client: Socket) {
+    const target = this.clients.get(message.to);
+    if (target) {
+      target.emit('ice', message.data);
     }
   }
 
   @SubscribeMessage('offer')
-  async handleOffer(@MessageBody() message , @ConnectedSocket() client:Socket){
-    const target = await this.clients.get(message.to)
-    if (target){
-      await target.emit('offer' , message.data)
+  async handleOffer(@MessageBody() message: any, @ConnectedSocket() client: Socket) {
+    const target = this.clients.get(message.to);
+    if (target) {
+      target.emit('offer', message.data);
     }
   }
 
   @SubscribeMessage('answer')
-  async handleAnswer(@MessageBody() message , @ConnectedSocket() client:Socket){
-    const target = await this.clients.get(message.to)
-    if (target){
-      await target.emit('answer' , message.data)
+  async handleAnswer(@MessageBody() message: any, @ConnectedSocket() client: Socket) {
+    const target = this.clients.get(message.to);
+    if (target) {
+      target.emit('answer', message.data);
     }
   }
 
-
   @SubscribeMessage('nextcall')
-  async handleNextCall(@MessageBody() Id , @ConnectedSocket() client:Socket){
-    const target = await this.clients.get(Id)
-    if (target){
-      await target.emit('nextcall' , 'nextcall')
+  async handleNextCall(@MessageBody() Id: string, @ConnectedSocket() client: Socket) {
+    const target = this.clients.get(Id);
+    if (target) {
+      target.emit('nextcall', 'nextcall');
     }
   }
 }

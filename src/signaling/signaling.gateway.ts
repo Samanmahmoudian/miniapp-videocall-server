@@ -1,9 +1,9 @@
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, SubscribeMessage, WebSocketGateway, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { Mutex } from 'async-mutex';
+
 
 let queue: string[] = [];
-const mutex = new Mutex();
+
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -41,13 +41,22 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   async connectClients() {
-      while (queue.length > 1 && queue.length % 2 == 0) {
-        await this.clients.get(queue[0]).emit('caller' , queue[1]);
-        await this.clients.get(queue[1]).emit('callee' , queue[0])
-        await queue.splice(0,2)
-      }
-      
-  }
+    while (queue.length >= 2) {
+        const callerId = queue.shift();
+        const calleeId = queue.shift();
+        
+        if (this.clients.has(callerId) && this.clients.has(calleeId)) {
+            await Promise.all([
+                this.clients.get(callerId).emit('caller', calleeId),
+                this.clients.get(calleeId).emit('callee', callerId)
+            ]);
+        } else {
+            if (callerId) queue.push(callerId);
+            if (calleeId) queue.push(calleeId);
+        }
+    }
+}
+
 
   @SubscribeMessage('startNewCall')
   async handleStartNewCall(@MessageBody() telegramId: string, @ConnectedSocket() client: Socket) {

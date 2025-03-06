@@ -51,9 +51,9 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
     if (!queue.has(TelegramId)) { 
       queue.add(TelegramId);
       this.pairedUser.delete(TelegramId)
-      this.connectClients();
+      
     }
-    
+    this.connectClients();
   }
 
   async connectClients() {
@@ -119,13 +119,13 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @SubscribeMessage('nextcall')
   async handleNextCall(@MessageBody() Id, @ConnectedSocket() client: Socket) {
-    const target = this.clients.get(Id.to);
-    target?.emit('nextcall', 'nextcall');
-
-    // Check if the 'from' id is already in the queue
-    if (queue.has(Id.from)) {
-      queue.delete(Id.from); // Remove 'from' id from queue if already present
+ 
+    if(this.pairedUser.get(Id.from) == Id.to){
+      const target = this.clients.get(Id.to);
+      target?.emit('nextcall', 'nextcall');
+      if (queue.has(Id.from)) {
+        queue.delete(Id.from); 
+      }
     }
-    // Optionally: re-add the 'from' id for the next round of connections if needed
   }
 }

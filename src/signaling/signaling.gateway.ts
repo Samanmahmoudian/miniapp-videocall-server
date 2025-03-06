@@ -11,13 +11,16 @@ import { Server, Socket } from 'socket.io';
 import { Mutex } from 'async-mutex'; // Importing Mutex for synchronizing queue operations
 
 let queue: string[] = [];
-const mutex = new Mutex(); // Mutex to lock the queue processing
+const mutex = new Mutex();
+
+
 
 @WebSocketGateway({ cors: { origin: '*' } })
 export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
   private clients = new Map<string, Socket>();
+  private pairedUser = new Map()
 
   async handleConnection(client: Socket) {
     const userTelegramId = String(client.handshake.query.userTelegramId);
@@ -47,6 +50,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
   async startNewCall(TelegramId: string) {
     if (!queue.includes(TelegramId)) { 
       queue.push(TelegramId);
+      this.pairedUser.delete(TelegramId)
     }
     console.log("Current queue:", queue);
     this.connectClients();
@@ -54,27 +58,30 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   async connectClients() {
     while (queue.length >= 2) {
-      const release = await mutex.acquire(); // Acquire mutex lock to ensure only one process runs at a time
+      const release = await mutex.acquire();
       try {
         const callerId = queue.shift();
         const calleeId = queue.shift();
 
-        if (callerId && calleeId) {
+        if (callerId && calleeId && this.pairedUser.get(callerId) != calleeId && this.pairedUser.get(calleeId) != callerId) {
           const callerClient = this.clients.get(callerId);
           const calleeClient = this.clients.get(calleeId);
 
           if (callerClient && calleeClient) {
-            // Emit 'caller' and 'callee' messages to both clients
+
             await Promise.all([
               callerClient.emit('caller', calleeId),
               calleeClient.emit('callee', callerId),
+              this.pairedUser.set(callerId , calleeId),
+              this.pairedUser.set(calleeId , callerId)
+              
             ]);
 
             console.log(`Connected: ${callerId} with ${calleeId}`);
-            release(); // Release the mutex lock after the connection
-            return; // Exit the loop once the connection is made
+            release(); 
+            return; 
           } else {
-            // If one of the clients is invalid, push them back to the queue
+
             if (callerId) queue.push(callerId);
             if (calleeId) queue.push(calleeId);
             console.log('Re-queuing due to invalid client(s)');
@@ -83,7 +90,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
           console.log('Insufficient clients in queue to connect');
         }
       } finally {
-        release(); // Always release the lock, even if an error occurs
+        release();
       }
     }
   }

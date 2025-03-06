@@ -99,8 +99,12 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   @SubscribeMessage('nextcall')
-  async handleNextCall(@MessageBody() Id: string, @ConnectedSocket() client: Socket) {
-    const target = this.clients.get(Id);
+  async handleNextCall(@MessageBody() Id, @ConnectedSocket() client: Socket) {
+    const target = this.clients.get(Id.to);
     target?.emit('nextcall', 'nextcall');
+
+    if(queue.includes(Id.from)){
+      queue = queue.filter(userId => userId !== Id.from)
+    }
   }
 }

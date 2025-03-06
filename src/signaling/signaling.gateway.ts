@@ -119,13 +119,13 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
 
   @SubscribeMessage('nextcall')
   async handleNextCall(@MessageBody() Id, @ConnectedSocket() client: Socket) {
- 
-    if(this.pairedUser.get(Id.from) == Id.to){
-      const target = this.clients.get(Id.to);
-      target?.emit('nextcall', 'nextcall');
-      if (queue.has(Id.from)) {
-        queue.delete(Id.from); 
-      }
+    const target = this.clients.get(Id.to);
+    target?.emit('nextcall', 'nextcall');
+
+
+    if (queue.has(Id.from)) {
+      queue.delete(Id.from); 
     }
+
   }
 }

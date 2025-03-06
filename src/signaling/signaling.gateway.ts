@@ -10,7 +10,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import {Mutex} from 'async-mutex'
 let queue: string[] = [];
-let mutex = new Mutex
+let mutex = new Mutex()
 @WebSocketGateway({ cors: { origin: '*' } })
 export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()

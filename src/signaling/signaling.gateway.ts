@@ -60,7 +60,8 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
             callerClient.emit('caller', calleeId),
             calleeClient.emit('callee', callerId), 
         ]);
-        return
+        release()
+        break
         }else{
           release()
           if (callerId) queue.push(callerId);
@@ -73,9 +74,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
         if (calleeId) queue.push(calleeId);
         this.connectClients()
       }
-    release()
     }
-    return
 }
 
 

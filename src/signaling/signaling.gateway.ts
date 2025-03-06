@@ -50,6 +50,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
   async startNewCall(TelegramId: string) {
     if (!queue.has(TelegramId)) { 
       queue.add(TelegramId);
+      this.pairedUser.delete(TelegramId)
     }
     this.connectClients();
   }
@@ -63,18 +64,17 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
         const calleeId = queue.values().next().value;
         queue.delete(calleeId)
 
-        if (callerId && calleeId) {
+        if (callerId && calleeId && !this.pairedUser.has(callerId) && !this.pairedUser.has(calleeId) ) {
           const callerClient = this.clients.get(callerId);
           const calleeClient = this.clients.get(calleeId);
 
           if (callerClient && calleeClient) {
-
+            
             await Promise.all([
               callerClient.emit('caller', calleeId),
               calleeClient.emit('callee', callerId),
               this.pairedUser.set(callerId , calleeId),
               this.pairedUser.set(calleeId , callerId)
-              
             ]);
 
             console.log(`Connected: ${callerId} with ${calleeId}`);

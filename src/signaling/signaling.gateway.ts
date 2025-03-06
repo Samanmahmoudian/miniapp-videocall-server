@@ -56,7 +56,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   async connectClients() {
-    while (queue.size >= 2) {
+    while (queue.size >= 2 && queue.size % 2 == 0) {
       const release = await mutex.acquire();
       try {
         const callerId = queue.values().next().value
@@ -65,8 +65,8 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
         queue.delete(calleeId)
 
         if (callerId && calleeId && !this.pairedUser.has(callerId) && !this.pairedUser.has(calleeId) ) {
-          const callerClient = this.clients.get(callerId);
-          const calleeClient = this.clients.get(calleeId);
+          const callerClient = await this.clients.get(callerId);
+          const calleeClient = await this.clients.get(calleeId);
 
           if (callerClient && calleeClient) {
             
@@ -79,7 +79,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
 
             console.log(`Connected: ${callerId} with ${calleeId}`);
             release(); 
-            return; 
+            break
           } else {
 
             if (callerId) queue.add(callerId);

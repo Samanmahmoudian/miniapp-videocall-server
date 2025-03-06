@@ -8,9 +8,11 @@ import {
   WebSocketServer 
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import {Mutex} from 'async-mutex'
+import { Mutex } from 'async-mutex'; // Importing Mutex for synchronizing queue operations
+
 let queue: string[] = [];
-let mutex = new Mutex()
+const mutex = new Mutex(); // Mutex to lock the queue processing
+
 @WebSocketGateway({ cors: { origin: '*' } })
 export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -27,6 +29,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
     }
 
     this.clients.set(userTelegramId, client);
+    console.log(`User connected: ${userTelegramId}`);
   }
 
   async handleDisconnect(client: Socket) {
@@ -35,6 +38,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
         client.broadcast.emit('disconnected', key);
         queue = queue.filter(userId => userId !== key);
         this.clients.delete(key);
+        console.log(`User disconnected: ${key}`);
         break;
       }
     }
@@ -44,41 +48,45 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
     if (!queue.includes(TelegramId)) { 
       queue.push(TelegramId);
     }
+    console.log("Current queue:", queue);
     this.connectClients();
   }
 
   async connectClients() {
     while (queue.length >= 2) {
-      let release = await mutex.acquire()
-      const callerId = await queue.shift();
-      const calleeId = await queue.shift();
-      if(callerId && calleeId){
-        const callerClient = this.clients.get(callerId);
-        const calleeClient = this.clients.get(calleeId);
-        if(calleeClient && callerClient){
-          await Promise.all([
-            callerClient.emit('caller', calleeId),
-            calleeClient.emit('callee', callerId), 
-        ]);
-        release()
-        break
-        }else{
-          release()
-          if (callerId) queue.push(callerId);
-          if (calleeId) queue.push(calleeId);
-          this.connectClients()
+      const release = await mutex.acquire(); // Acquire mutex lock to ensure only one process runs at a time
+      try {
+        const callerId = queue.shift();
+        const calleeId = queue.shift();
+
+        if (callerId && calleeId) {
+          const callerClient = this.clients.get(callerId);
+          const calleeClient = this.clients.get(calleeId);
+
+          if (callerClient && calleeClient) {
+            // Emit 'caller' and 'callee' messages to both clients
+            await Promise.all([
+              callerClient.emit('caller', calleeId),
+              calleeClient.emit('callee', callerId),
+            ]);
+
+            console.log(`Connected: ${callerId} with ${calleeId}`);
+            release(); // Release the mutex lock after the connection
+            return; // Exit the loop once the connection is made
+          } else {
+            // If one of the clients is invalid, push them back to the queue
+            if (callerId) queue.push(callerId);
+            if (calleeId) queue.push(calleeId);
+            console.log('Re-queuing due to invalid client(s)');
+          }
+        } else {
+          console.log('Insufficient clients in queue to connect');
         }
-      }else{
-        release()
-        if (callerId) queue.push(callerId);
-        if (calleeId) queue.push(calleeId);
-        this.connectClients()
+      } finally {
+        release(); // Always release the lock, even if an error occurs
       }
     }
-}
-
-
-
+  }
 
   @SubscribeMessage('startNewCall')
   async handleStartNewCall(@MessageBody() telegramId: string, @ConnectedSocket() client: Socket) {
@@ -108,8 +116,10 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
     const target = this.clients.get(Id.to);
     target?.emit('nextcall', 'nextcall');
 
-    if(queue.includes(Id.from)){
-      queue = queue.filter(userId => userId !== Id.from)
+    // Check if the 'from' id is already in the queue
+    if (queue.includes(Id.from)) {
+      queue = queue.filter(userId => userId !== Id.from); // Remove 'from' id from queue if already present
     }
+    // Optionally: re-add the 'from' id for the next round of connections if needed
   }
 }

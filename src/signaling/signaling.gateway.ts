@@ -51,8 +51,9 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
     if (!queue.has(TelegramId)) { 
       queue.add(TelegramId);
       this.pairedUser.delete(TelegramId)
+      this.connectClients();
     }
-    this.connectClients();
+    
   }
 
   async connectClients() {

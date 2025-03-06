@@ -58,7 +58,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
   async connectClients() {
     while (queue.size >= 2 && queue.size % 2 == 0) {
       const release = await mutex.acquire();
-      try {
+      
         const callerId = queue.values().next().value
         queue.delete(callerId)
         const calleeId = queue.values().next().value;
@@ -89,9 +89,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
         } else {
           console.log('Insufficient clients in queue to connect');
         }
-      } finally {
-        release();
-      }
+      
     }
   }
 

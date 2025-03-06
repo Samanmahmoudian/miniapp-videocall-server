@@ -112,3 +112,37 @@ my ip = 2.176.229.75
         }
 
     }
+
+
+
+
+
+
+
+
+
+
+      async connectClients() {
+    while (queue.length >= 2) {
+        const callerId = queue.shift();
+        const calleeId = queue.shift();
+        if (callerId && calleeId && !usersInCall.includes(calleeId) && !usersInCall.includes(calleeId)) {
+            const callerClient = this.clients.get(callerId);
+            const calleeClient = this.clients.get(calleeId);
+            if (callerClient && calleeClient) {
+                await Promise.all([
+                    callerClient.emit('caller', calleeId),
+                    calleeClient.emit('callee', callerId),
+                    usersInCall.push(callerId , calleeId),
+                ]);
+            } else {
+                if (callerId) queue.push(callerId);
+                if (calleeId) queue.push(calleeId);
+            }
+        }else{
+          this.connectClients()
+        }
+        
+    }
+    return
+}

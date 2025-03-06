@@ -8,9 +8,9 @@ import {
   WebSocketServer 
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-
+import {Mutex} from 'async-mutex'
 let queue: string[] = [];
-let usersInCall:string[] = []
+let mutex = new Mutex
 @WebSocketGateway({ cors: { origin: '*' } })
 export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -27,7 +27,6 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
     }
 
     this.clients.set(userTelegramId, client);
-    console.log(`User connected: ${userTelegramId}`);
   }
 
   async handleDisconnect(client: Socket) {
@@ -36,7 +35,6 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
         client.broadcast.emit('disconnected', key);
         queue = queue.filter(userId => userId !== key);
         this.clients.delete(key);
-        console.log(`User disconnected: ${key}`);
         break;
       }
     }
@@ -45,40 +43,37 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
   async startNewCall(TelegramId: string) {
     if (!queue.includes(TelegramId)) { 
       queue.push(TelegramId);
-      if(usersInCall.includes(TelegramId)){
-        usersInCall.splice(usersInCall.indexOf(TelegramId) , 1)
-      }
     }
-    console.log("Current queue:", queue);
     this.connectClients();
   }
 
   async connectClients() {
     while (queue.length >= 2) {
-        const callerId = queue.shift();
-        const calleeId = queue.shift();
-
-        if (callerId && calleeId && !usersInCall.includes(calleeId) && !usersInCall.includes(calleeId)) {
-            const callerClient = this.clients.get(callerId);
-            const calleeClient = this.clients.get(calleeId);
-
-            if (callerClient && calleeClient) {
-                await Promise.all([
-                    callerClient.emit('caller', calleeId),
-                    calleeClient.emit('callee', callerId),
-                    usersInCall.push(callerId , calleeId),
-                    console.log('incall users: ' , usersInCall)
-                ]);
-            } else {
-                if (callerId) queue.push(callerId);
-                if (calleeId) queue.push(calleeId);
-            }
+      let release = await mutex.acquire()
+      const callerId = await queue.shift();
+      const calleeId = await queue.shift();
+      if(callerId && calleeId){
+        const callerClient = this.clients.get(callerId);
+        const calleeClient = this.clients.get(calleeId);
+        if(calleeClient && callerClient){
+          await Promise.all([
+            callerClient.emit('caller', calleeId),
+            calleeClient.emit('callee', callerId), 
+        ]);
         }else{
+          release()
+          if (callerId) queue.push(callerId);
+          if (calleeId) queue.push(calleeId);
           this.connectClients()
         }
-        
+      }else{
+        release()
+        if (callerId) queue.push(callerId);
+        if (calleeId) queue.push(calleeId);
+        this.connectClients()
+      }
+
     }
-    return
 }
 
 

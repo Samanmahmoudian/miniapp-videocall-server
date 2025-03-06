@@ -66,7 +66,8 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
                 await Promise.all([
                     callerClient.emit('caller', calleeId),
                     calleeClient.emit('callee', callerId),
-                    usersInCall.push(callerId , calleeId)
+                    usersInCall.push(callerId , calleeId),
+                    console.log('incall users: ' , usersInCall)
                 ]);
             } else {
                 if (callerId) queue.push(callerId);
@@ -77,7 +78,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
         }
         
     }
-    
+    return
 }
 
 

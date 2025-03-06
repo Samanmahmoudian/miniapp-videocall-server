@@ -10,7 +10,7 @@ import {
 import { Server, Socket } from 'socket.io';
 
 let queue: string[] = [];
-
+let usersInCall:string[] = []
 @WebSocketGateway({ cors: { origin: '*' } })
 export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
@@ -45,6 +45,9 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
   async startNewCall(TelegramId: string) {
     if (!queue.includes(TelegramId)) { 
       queue.push(TelegramId);
+      if(usersInCall.includes(TelegramId)){
+        usersInCall.splice(usersInCall.indexOf(TelegramId) , 1)
+      }
     }
     console.log("Current queue:", queue);
     this.connectClients();
@@ -55,23 +58,26 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
         const callerId = queue.shift();
         const calleeId = queue.shift();
 
-        if (callerId && calleeId) {
+        if (callerId && calleeId && !usersInCall.includes(calleeId) && !usersInCall.includes(calleeId)) {
             const callerClient = this.clients.get(callerId);
             const calleeClient = this.clients.get(calleeId);
 
             if (callerClient && calleeClient) {
                 await Promise.all([
                     callerClient.emit('caller', calleeId),
-                    calleeClient.emit('callee', callerId)
+                    calleeClient.emit('callee', callerId),
+                    usersInCall.push(callerId , calleeId)
                 ]);
             } else {
                 if (callerId) queue.push(callerId);
                 if (calleeId) queue.push(calleeId);
             }
+        }else{
+          this.connectClients()
         }
-        return
+        
     }
-    return
+    
 }
 
 

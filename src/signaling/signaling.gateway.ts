@@ -10,7 +10,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Mutex } from 'async-mutex'; // Importing Mutex for synchronizing queue operations
 
-let queue: string[] = [];
+let queue = new Set()
 const mutex = new Mutex();
 
 
@@ -39,7 +39,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
     for (let [key, value] of this.clients.entries()) {
       if (value === client) {
         client.broadcast.emit('disconnected', key);
-        queue = queue.filter(userId => userId !== key);
+        queue.delete(key)
         this.clients.delete(key);
         console.log(`User disconnected: ${key}`);
         break;
@@ -48,22 +48,22 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
   }
 
   async startNewCall(TelegramId: string) {
-    if (!queue.includes(TelegramId)) { 
-      queue.push(TelegramId);
-      this.pairedUser.delete(TelegramId)
+    if (!queue.has(TelegramId)) { 
+      queue.add(TelegramId);
     }
-    console.log("Current queue:", queue);
     this.connectClients();
   }
 
   async connectClients() {
-    while (queue.length >= 2) {
+    while (queue.size >= 2) {
       const release = await mutex.acquire();
       try {
-        const callerId = queue.shift();
-        const calleeId = queue.shift();
+        const callerId = queue.values().next().value
+        queue.delete(callerId)
+        const calleeId = queue.values().next().value;
+        queue.delete(calleeId)
 
-        if (callerId && calleeId && this.pairedUser.get(callerId) != calleeId && this.pairedUser.get(calleeId) != callerId) {
+        if (callerId && calleeId) {
           const callerClient = this.clients.get(callerId);
           const calleeClient = this.clients.get(calleeId);
 
@@ -82,8 +82,8 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
             return; 
           } else {
 
-            if (callerId) queue.push(callerId);
-            if (calleeId) queue.push(calleeId);
+            if (callerId) queue.add(callerId);
+            if (calleeId) queue.add(calleeId);
             console.log('Re-queuing due to invalid client(s)');
           }
         } else {
@@ -124,8 +124,8 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
     target?.emit('nextcall', 'nextcall');
 
     // Check if the 'from' id is already in the queue
-    if (queue.includes(Id.from)) {
-      queue = queue.filter(userId => userId !== Id.from); // Remove 'from' id from queue if already present
+    if (queue.has(Id.from)) {
+      queue.delete(Id.from); // Remove 'from' id from queue if already present
     }
     // Optionally: re-add the 'from' id for the next round of connections if needed
   }

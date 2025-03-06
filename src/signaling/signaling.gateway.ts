@@ -73,7 +73,7 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
         if (calleeId) queue.push(calleeId);
         this.connectClients()
       }
-
+    release()
     }
     return
 }

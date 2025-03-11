@@ -128,4 +128,10 @@ export class SignalingGateway implements OnGatewayConnection, OnGatewayDisconnec
     }
 
   }
+
+  @SubscribeMessage('cameraview')
+  async handleCameraView(@MessageBody() message: any, @ConnectedSocket() client: Socket) {
+    const target = this.clients.get(message.to);
+    target?.emit('cameraview', message.data);
+  }
 }
